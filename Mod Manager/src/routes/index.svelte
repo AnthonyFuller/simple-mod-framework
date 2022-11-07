@@ -182,7 +182,7 @@
 		window.fs.removeSync("./temp.asar")
 
 		updatingFramework = false
-		
+
 		window.ipc.send("relaunchApp")
 	}
 
@@ -367,7 +367,7 @@
 						</div>
 						<hr class="bg-gray-500 border-none h-px" />
 						<div class="mt-2">
-							{update.changelog}
+							{@html window.sanitizeHtml(marked(update.changelog, { gfm: true }).replaceAll("Bugfixes", "Bug Fixes"))}
 						</div>
 						{#if canAutomaticallyUpdate}
 							<br />
