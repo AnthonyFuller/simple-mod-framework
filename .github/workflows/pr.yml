@@ -53,7 +53,7 @@ jobs:
       - name: Download ResourceTool
         uses: aochmann/actions-download-artifact@5709392f11b5937bd316e52687ad87f7deced5f5
         with:
-          repo: OrfeasZ/ZHMTools
+          repo: AnthonyFuller/ZHMTools
           name: ResourceTool-win-x64
           latest: true
           path: './Third-Party'
