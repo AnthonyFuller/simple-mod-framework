@@ -1,4 +1,4 @@
-const FrameworkVersion = "2.2.2"
+const FrameworkVersion = "2.5.1"
 const isDevBuild = false
 
 import * as Sentry from "@sentry/node"
@@ -24,7 +24,7 @@ if (!args["--logLevel"] || !args["--logLevel"].length) {
 
 const rpkgInstance = new RPKGInstance()
 
-const config: Config = json5.parse(String(fs.readFileSync(path.join(process.cwd(), "config.json"))))
+const config: Config = json5.parse(fs.readFileSync(path.join(process.cwd(), "config.json"), "utf8"))
 
 if (typeof config.outputConfigToAppDataOnDeploy == "undefined") {
 	config.outputConfigToAppDataOnDeploy = true
@@ -52,119 +52,119 @@ config.retailPath = path.resolve(process.cwd(), config.retailPath)
 
 const logger = args["--useConsoleLogging"]
 	? {
-		verbose: () => {},
-		debug: console.debug,
-		info: console.info,
-		warn: console.warn,
-		error: function (a: unknown, exitAfter = true) {
-			console.log(a)
+			verbose: async (...args: any) => {},
+			debug: async (...args: any) => {
+				console.debug("DEBUG", ...args)
+			},
+			info: async (...args: any) => {
+				console.info("INFO", ...args)
+			},
+			warn: async (...args: any) => {
+				console.warn("WARN", ...args)
+			},
+			error: async function (a: unknown, exitAfter = true) {
+				console.log("ERROR", a)
 
-			if (exitAfter) {
-				// @ts-expect-error Assigning stuff on global is probably bad practice
-				global.errored = true
-
-				if (config.reportErrors) {
+				if (exitAfter) {
+					if (config.reportErrors) {
 						Sentry.getCurrentHub().getScope()!.getTransaction()!.finish()
-				}
+					}
 
-				Sentry.close(2000).then(() => {
+					await Sentry.close()
+
 					rpkgInstance.exit()
 					try {
 						// @ts-expect-error Assigning stuff on global is probably bad practice
 						global.currentWorkerPool.destroy()
 					} catch {}
 					process.exit()
-				})
+				}
 			}
-		}
 	  }
 	: {
-		verbose: function (text: string) {
-			if (args["--logLevel"]!.includes("verbose")) {
-				process.stdout.write(chalk`{grey DETAIL\t${text}}\n`)
+			verbose: async function (text: string) {
+				if (args["--logLevel"]!.includes("verbose")) {
+					process.stdout.write(chalk`{grey DETAIL\t${text}}\n`)
 
-				if (args["--pauseAfterLogging"]) {
-					child_process.execSync("pause", {
-						// @ts-expect-error This code works and I'm not going to question it
-						shell: true,
-						stdio: [0, 1, 2]
-					})
-				}
-			}
-		},
-
-		debug: function (text: string) {
-			if (args["--logLevel"]!.includes("debug")) {
-				process.stdout.write(chalk`{grey DEBUG\t${text}}\n`)
-
-				if (args["--pauseAfterLogging"]) {
-					child_process.execSync("pause", {
-						// @ts-expect-error This code works and I'm not going to question it
-						shell: true,
-						stdio: [0, 1, 2]
-					})
-				}
-			}
-		},
-
-		info: function (text: string) {
-			if (args["--logLevel"]!.includes("info")) {
-				process.stdout.write(chalk`{blue INFO}\t${text}\n`)
-
-				if (args["--pauseAfterLogging"]) {
-					child_process.execSync("pause", {
-						// @ts-expect-error This code works and I'm not going to question it
-						shell: true,
-						stdio: [0, 1, 2]
-					})
-				}
-			}
-		},
-
-		warn: function (text: string) {
-			if (args["--logLevel"]!.includes("warn")) {
-				process.stdout.write(chalk`{yellow WARN}\t${text}\n`)
-
-				if (args["--pauseAfterLogging"]) {
-					child_process.execSync("pause", {
-						// @ts-expect-error This code works and I'm not going to question it
-						shell: true,
-						stdio: [0, 1, 2]
-					})
-				}
-			}
-		},
-
-		error: function (text: string, exitAfter = true) {
-			if (args["--logLevel"]!.includes("error")) {
-				process.stderr.write(chalk`{red ERROR}\t${text}\n`)
-				console.trace()
-
-				child_process.execSync("pause", {
-					// @ts-expect-error This code works and I'm not going to question it
-					shell: true,
-					stdio: [0, 1, 2]
-				})
-
-				if (exitAfter) {
-					// @ts-expect-error Assigning stuff on global is probably bad practice
-					global.errored = true
-
-					if (config.reportErrors) {
-							Sentry.getCurrentHub().getScope()!.getTransaction()!.finish()
+					if (args["--pauseAfterLogging"]) {
+						child_process.execSync("pause", {
+							// @ts-expect-error This code works and I'm not going to question it
+							shell: true,
+							stdio: [0, 1, 2]
+						})
 					}
+				}
+			},
 
-					Sentry.close(2000).then(() => {
+			debug: async function (text: string) {
+				if (args["--logLevel"]!.includes("debug")) {
+					process.stdout.write(chalk`{grey DEBUG\t${text}}\n`)
+
+					if (args["--pauseAfterLogging"]) {
+						child_process.execSync("pause", {
+							// @ts-expect-error This code works and I'm not going to question it
+							shell: true,
+							stdio: [0, 1, 2]
+						})
+					}
+				}
+			},
+
+			info: async function (text: string) {
+				if (args["--logLevel"]!.includes("info")) {
+					process.stdout.write(chalk`{blue INFO}\t${text}\n`)
+
+					if (args["--pauseAfterLogging"]) {
+						child_process.execSync("pause", {
+							// @ts-expect-error This code works and I'm not going to question it
+							shell: true,
+							stdio: [0, 1, 2]
+						})
+					}
+				}
+			},
+
+			warn: async function (text: string) {
+				if (args["--logLevel"]!.includes("warn")) {
+					process.stdout.write(chalk`{yellow WARN}\t${text}\n`)
+
+					if (args["--pauseAfterLogging"]) {
+						child_process.execSync("pause", {
+							// @ts-expect-error This code works and I'm not going to question it
+							shell: true,
+							stdio: [0, 1, 2]
+						})
+					}
+				}
+			},
+
+			error: async function (text: string, exitAfter = true) {
+				if (args["--logLevel"]!.includes("error")) {
+					process.stderr.write(chalk`{red ERROR}\t${text}\n`)
+					console.trace()
+
+					child_process.execSync("pause", {
+						// @ts-expect-error This code works and I'm not going to question it
+						shell: true,
+						stdio: [0, 1, 2]
+					})
+
+					if (exitAfter) {
+						if (config.reportErrors) {
+							Sentry.getCurrentHub().getScope()!.getTransaction()!.finish()
+						}
+
+						await Sentry.close()
+
 						rpkgInstance.exit()
 						try {
 							// @ts-expect-error Assigning stuff on global is probably bad practice
 							global.currentWorkerPool.destroy()
 						} catch {}
 						process.exit()
-					})
+					}
 				}
 			}
-		}
 	  }
 
 export default {
@@ -173,5 +173,19 @@ export default {
 	config,
 	logger,
 	isDevBuild,
-	args
+	args,
+	cleanExit: async () => {
+		if (config.reportErrors) {
+			Sentry.getCurrentHub().getScope()!.getTransaction()!.finish()
+		}
+
+		await Sentry.close()
+
+		rpkgInstance.exit()
+		try {
+			// @ts-expect-error Assigning stuff on global is probably bad practice
+			global.currentWorkerPool.destroy()
+		} catch {}
+		process.exit()
+	}
 }

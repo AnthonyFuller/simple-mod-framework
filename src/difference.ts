@@ -4,14 +4,14 @@ export default async function difference(
 	oldMap: { [x: string]: { hash: string; dependencies: Array<string>; affected: Array<string> } },
 	newMap: { [x: string]: { hash: string; dependencies: Array<string>; affected: Array<string> } }
 ) {
-	logger.info("Invalidating cache")
+	await logger.info("Invalidating cache")
 
 	const invalidFiles = []
 
 	const invalidData = []
 	const validData = []
 
-	logger.verbose("changedFiles")
+	await logger.verbose("Calculating changed files")
 
 	const changedFiles = []
 	for (const [filePath, newData] of Object.entries(newMap)) {
@@ -22,28 +22,46 @@ export default async function difference(
 		}
 	}
 
-	logger.verbose("invalidatedHashes")
+	for (const [filePath, oldData] of Object.entries(oldMap)) {
+		const newData = newMap[filePath]
 
-	const invalidatedHashes = []
-	for (const changedFile of changedFiles) {
-		invalidFiles.push(changedFile) // Must redeploy the changed file
-
-		oldMap[changedFile] && invalidatedHashes.push(...oldMap[changedFile].affected)
-
-		invalidatedHashes.push(...newMap[changedFile].affected)
+		if (!newData) {
+			changedFiles.push(filePath)
+		}
 	}
 
-	logger.verbose("filePath, newData")
+	await logger.verbose("Calculating hashes to invalidate")
+
+	const invalidatedHashes: string[] = []
+	for (const changedFile of changedFiles) {
+		invalidFiles.push(changedFile)
+
+		oldMap[changedFile] && invalidatedHashes.push(...oldMap[changedFile].affected)
+		newMap[changedFile] && invalidatedHashes.push(...newMap[changedFile].affected)
+	}
+
+	await logger.verbose("Invalidating dependencies")
+
+	// do ten cycles of propagation
+	for (let i = 0; i < 10; i++) {
+		for (const [filePath, newData] of Object.entries(newMap)) {
+			const oldData = oldMap[filePath]
+
+			if (invalidatedHashes.some((a) => (oldData || { dependencies: [] }).dependencies.includes(a) || newData.dependencies.includes(a))) {
+				invalidatedHashes.push(...[...(oldData || { affected: [] }).affected, ...newData.affected])
+			}
+		}
+	}
 
 	for (const [filePath, newData] of Object.entries(newMap)) {
 		const oldData = oldMap[filePath]
 
 		if (invalidatedHashes.some((a) => (oldData || { dependencies: [] }).dependencies.includes(a) || newData.dependencies.includes(a))) {
-			invalidFiles.push(filePath) // Must redeploy any files that depend on a changed file
+			invalidFiles.push(filePath)
 		}
 	}
 
-	logger.verbose("filePath, data")
+	await logger.verbose("Summarising")
 
 	for (const [filePath, data] of Object.entries(newMap)) {
 		if (!invalidFiles.includes(filePath)) {
