@@ -49,15 +49,6 @@ jobs:
           name: rpkg-cli
           latest: true
           path: './Third-Party'
-          
-      - name: Download ResourceTool
-        uses: dawidd6/action-download-artifact@v2
-        with:
-          github_token: ${{secrets.GITHUB_TOKEN}}
-          repo: AnthonyFuller/ZHMTools
-          name: ResourceTool-win-x64
-          branch: freelancer-ctt
-          path: 'Third-Party'
 
       - name: Install GUI dependencies
         if: steps.cache2.outputs.cache-hit != 'true'
