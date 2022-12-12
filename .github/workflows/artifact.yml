@@ -57,7 +57,7 @@ jobs:
           repo: AnthonyFuller/ZHMTools
           name: ResourceTool-win-x64
           branch: freelancer-ctt
-          path: './Third-Party'
+          path: 'Third-Party'
 
       - name: Install GUI dependencies
         if: steps.cache2.outputs.cache-hit != 'true'
